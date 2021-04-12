@@ -1,0 +1,11 @@
+# Code Editor Specific
+.vscode
+*.sublime-project
+*.sublime-workspace
+
+# Libraries
+node_modules
+vendor
+
+# Blender Resource files
+resources/*
