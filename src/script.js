@@ -99,10 +99,12 @@ gltfLoader.load(
     'portal.glb',
     // On loaded
     gltf => {
+        console.log(gltf)
         const bakedMesh = gltf.scene.children.find(child => child.name === 'baked')
         const lampLightAMesh = gltf.scene.children.find(child => child.name === 'lampLightA')
         const lampLightBMesh = gltf.scene.children.find(child => child.name === 'lampLightB')
         const portalLightMesh = gltf.scene.children.find(child => child.name === 'portalLight')
+
 
         bakedMesh.material = bakedMaterial
         lampLightAMesh.material = lampLightMaterial
