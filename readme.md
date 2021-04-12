@@ -1,4 +1,4 @@
-# Three.js Journey
+# Three.js Journey - Fantasy Portal
 
 ## Setup
 Download [Node.js](https://nodejs.org/en/download/).
