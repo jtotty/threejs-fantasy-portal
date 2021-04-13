@@ -57,6 +57,10 @@ const bakedTexture = textureLoader.load('baked.jpg')
 bakedTexture.flipY = false
 bakedTexture.encoding = THREE.sRGBEncoding
 
+const d20Texture = textureLoader.load('d20.jpg')
+d20Texture.flipY = false
+d20Texture.encoding = THREE.sRGBEncoding
+
 /**
  * Materials
  */
@@ -65,6 +69,9 @@ const bakedMaterial = new THREE.MeshBasicMaterial({ map: bakedTexture })
 
 // Lamp light material
 const lampLightMaterial = new THREE.MeshBasicMaterial({ color: 0xffffb8 })
+
+// d20 material
+const d20Material = new THREE.MeshBasicMaterial({ map: d20Texture })
 
 debugObject.portalColorStart = '#a3c5e1'
 debugObject.portalColorEnd = '#ffffff'
@@ -95,11 +102,10 @@ const portalLightMaterial = new THREE.ShaderMaterial({
 /**
  * Model
  */
+// Main scene
 gltfLoader.load(
     'portal.glb',
-    // On loaded
     gltf => {
-        console.log(gltf)
         const bakedMesh = gltf.scene.children.find(child => child.name === 'baked')
         const lampLightAMesh = gltf.scene.children.find(child => child.name === 'lampLightA')
         const lampLightBMesh = gltf.scene.children.find(child => child.name === 'lampLightB')
@@ -115,11 +121,25 @@ gltfLoader.load(
     }
 )
 
+let d20Model
+gltfLoader.load(
+    'd20.glb',
+    gltf => {
+        const d20Mesh = gltf.scene.children.find(child => child.name === 'd20')
+        d20Mesh.scale.set(0.06, 0.06, 0.06)
+        d20Mesh.position.set(0, 2.05, - 1.8)
+        d20Mesh.material = d20Material
+
+        d20Model = d20Mesh
+        scene.add(d20Model)
+    }
+)
+
 /**
  * Fireflies
  */
 debugObject.firefliesCount = 5000
-debugObject.firefliesSize = 100
+debugObject.firefliesSize = 62
 debugObject.insideColor = '#ffffff'
 debugObject.outsideColor = '#0f3dac'
 
@@ -189,8 +209,8 @@ const generateFireflies = () =>
 
 generateFireflies()
 
-gui.add(debugObject, 'firefliesSize').min(0).max(500).step(1).onFinishChange(generateFireflies)
-gui.add(debugObject, 'firefliesCount').min(0).max(1000).step(10).onFinishChange(generateFireflies)
+gui.add(debugObject, 'firefliesSize').min(0).max(100).step(1).onFinishChange(generateFireflies)
+gui.add(debugObject, 'firefliesCount').min(0).max(10000).step(10).onFinishChange(generateFireflies)
 gui.addColor(debugObject, 'insideColor').onFinishChange(generateFireflies)
 gui.addColor(debugObject, 'outsideColor').onFinishChange(generateFireflies)
 
@@ -272,8 +292,14 @@ const tick = () =>
     // Update fireflies
     firefliesMaterial.uniforms.uTime.value = elapsedTime
 
-    // Update porta
+    // Update portal
     portalLightMaterial.uniforms.uTime.value = elapsedTime
+
+    if (d20Model) {
+        d20Model.rotation.x = elapsedTime * 0.5
+        d20Model.rotation.y = elapsedTime
+        d20Model.rotation.z = elapsedTime * 1.5
+    }
 
     // Update controls
     controls.update()
