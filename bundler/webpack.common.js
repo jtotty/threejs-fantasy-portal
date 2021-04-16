@@ -2,6 +2,8 @@ const CopyWebpackPlugin = require('copy-webpack-plugin')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const MiniCSSExtractPlugin = require('mini-css-extract-plugin')
 const path = require('path')
+const webpack = require('webpack')
+const dotenv = require('dotenv').config()
 
 module.exports = {
     entry: path.resolve(__dirname, '../src/script.js'),
@@ -22,7 +24,10 @@ module.exports = {
             template: path.resolve(__dirname, '../src/index.html'),
             minify: true
         }),
-        new MiniCSSExtractPlugin()
+        new MiniCSSExtractPlugin(),
+        new webpack.DefinePlugin({
+            'process.env': dotenv.parsed
+        }),
     ],
     module:
     {
