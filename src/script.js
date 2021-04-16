@@ -10,6 +10,7 @@ import { gsap } from 'gsap'
 
 // Custom modules
 import LoadingScreen from './modules/loadingScreen.js'
+import DiceRoll from './modules/diceRoll.js'
 
 // FPS Counter
 import Stats from 'stats.js'
