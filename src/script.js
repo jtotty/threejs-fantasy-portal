@@ -4,7 +4,17 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
+
+// Animation
+import { gsap } from 'gsap'
+
+// Custom modules
+import LoadingScreen from './modules/loadingScreen.js'
+
+// FPS Counter
 import Stats from 'stats.js'
+
+// Shaders
 import firefliesVertexShader from './shaders/fireflies/vertex.glsl'
 import firefliesFragmentShader from './shaders/fireflies/fragment.glsl'
 import portalVertexShader from './shaders/portal/vertex.glsl'
@@ -24,7 +34,12 @@ const gui = new dat.GUI({
  */
 const stats = new Stats()
 stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
-document.body.appendChild( stats.dom );
+document.body.appendChild( stats.dom )
+
+if (process.env.PRODUCTION) {
+    gui.hide()
+    stats.dom.classList.add('hide-stats')
+}
 
 // Canvas
 const canvas = document.querySelector('canvas.webgl')
@@ -32,34 +47,51 @@ const canvas = document.querySelector('canvas.webgl')
 // Scene
 const scene = new THREE.Scene()
 
-// Axis Helper
-const axesHelper = new THREE.AxesHelper( 5 );
-scene.add(axesHelper);
-
 /**
  * Loaders
  */
-// Texture loader
-const textureLoader = new THREE.TextureLoader()
+ const loadingManager = new THREE.LoadingManager(
+    // Loaded
+    () => {
+        gsap.delayedCall(0.5, () => {
+            gsap.to(loadingScreen.uAlpha, { duration: 0.5, value: 0 })
+            loadingScreen.loaded()
+            generateFireflies()
+        })
+    }
+ )
 
+/**
+ * Textures
+ */
+ const textureLoader = new THREE.TextureLoader(loadingManager)
+
+ const bakedTexture = textureLoader.load('baked.jpg')
+ bakedTexture.flipY = false
+ bakedTexture.encoding = THREE.sRGBEncoding
+ 
+ const d20Texture = textureLoader.load('d20.jpg')
+ d20Texture.flipY = false
+ d20Texture.encoding = THREE.sRGBEncoding
+ 
+ // Loading Screen
+ const loadingScreen = new LoadingScreen()
+ scene.add(loadingScreen.overlay)
+ 
+ // Axis Helper
+ const axesHelper = new THREE.AxesHelper( 5 );
+ scene.add(axesHelper);
+
+/**
+ * Model Loaders
+ */
 // Draco loader
 const dracoLoader = new DRACOLoader()
 dracoLoader.setDecoderPath('draco/')
 
 // GLTF loader
-const gltfLoader = new GLTFLoader()
+const gltfLoader = new GLTFLoader(loadingManager)
 gltfLoader.setDRACOLoader(dracoLoader)
-
-/**
- * Textures
- */
-const bakedTexture = textureLoader.load('baked.jpg')
-bakedTexture.flipY = false
-bakedTexture.encoding = THREE.sRGBEncoding
-
-const d20Texture = textureLoader.load('d20.jpg')
-d20Texture.flipY = false
-d20Texture.encoding = THREE.sRGBEncoding
 
 /**
  * Materials
@@ -129,7 +161,6 @@ gltfLoader.load(
         d20Mesh.scale.set(0.06, 0.06, 0.06)
         d20Mesh.position.set(0, 2.05, - 1.8)
         d20Mesh.material = d20Material
-
         d20Model = d20Mesh
         scene.add(d20Model)
     }
@@ -206,8 +237,6 @@ const generateFireflies = () =>
     fireflies = new THREE.Points(firefliesGeometry, firefliesMaterial)
     scene.add(fireflies)
 }
-
-generateFireflies()
 
 gui.add(debugObject, 'firefliesSize').min(0).max(100).step(1).onFinishChange(generateFireflies)
 gui.add(debugObject, 'firefliesCount').min(0).max(10000).step(10).onFinishChange(generateFireflies)
@@ -290,7 +319,9 @@ const tick = () =>
     const elapsedTime = clock.getElapsedTime()
 
     // Update fireflies
-    firefliesMaterial.uniforms.uTime.value = elapsedTime
+    if (fireflies != null) {
+        firefliesMaterial.uniforms.uTime.value = elapsedTime
+    }
 
     // Update portal
     portalLightMaterial.uniforms.uTime.value = elapsedTime
