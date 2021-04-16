@@ -129,7 +129,6 @@ gltfLoader.load(
         d20Mesh.scale.set(0.06, 0.06, 0.06)
         d20Mesh.position.set(0, 2.05, - 1.8)
         d20Mesh.material = d20Material
-
         d20Model = d20Mesh
         scene.add(d20Model)
     }
