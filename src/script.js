@@ -53,6 +53,7 @@ const scene = new THREE.Scene()
  const loadingManager = new THREE.LoadingManager(
     // Loaded
     () => {
+        onLoaded()
         gsap.delayedCall(0.5, () => {
             gsap.to(loadingScreen.uAlpha, { duration: 0.5, value: 0 })
             loadingScreen.loaded()
@@ -132,9 +133,8 @@ const portalLightMaterial = new THREE.ShaderMaterial({
 })
 
 /**
- * Model
+ * Main scene
  */
-// Main scene
 gltfLoader.load(
     'portal.glb',
     gltf => {
@@ -153,6 +153,9 @@ gltfLoader.load(
     }
 )
 
+/**
+ * d20 Dice
+ */
 let d20Model
 gltfLoader.load(
     'd20.glb',
@@ -170,7 +173,7 @@ gltfLoader.load(
  * Fireflies
  */
 debugObject.firefliesCount = 5000
-debugObject.firefliesSize = 62
+debugObject.firefliesSize = 70 * (window.innerHeight / 1440)
 debugObject.insideColor = '#ffffff'
 debugObject.outsideColor = '#0f3dac'
 
@@ -256,23 +259,29 @@ const sizes = {
     height: window.innerHeight
 }
 
-window.addEventListener('resize', () =>
-{
-    // Update sizes
-    sizes.width = window.innerWidth
-    sizes.height = window.innerHeight
+const onLoaded = () => {
+    window.addEventListener('resize', () => {
+        // Update sizes
+        sizes.width = window.innerWidth
+        sizes.height = window.innerHeight
 
-    // Update camera
-    camera.aspect = sizes.width / sizes.height
-    camera.updateProjectionMatrix()
+        // Update camera
+        camera.aspect = sizes.width / sizes.height
+        camera.updateProjectionMatrix()
 
-    // Update renderer
-    renderer.setSize(sizes.width, sizes.height)
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+        // Update renderer
+        renderer.setSize(sizes.width, sizes.height)
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
-    // Update fireflies
-    firefliesMaterial.uniforms.uPixelRatio.value = Math.min(window.devicePixelRatio, 2)
-})
+        // Update fireflies
+        firefliesMaterial.uniforms.uPixelRatio.value = Math.min(window.devicePixelRatio, 2)
+        
+        const size = 70 * (window.innerHeight / 1440)
+        firefliesMaterial.uniforms.uSize.value = size
+        debugObject.firefliesSize = size
+        gui.updateDisplay()
+    })
+}
 
 /**
  * Camera

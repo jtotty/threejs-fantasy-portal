@@ -9,3 +9,6 @@ vendor
 
 # Blender Resource files
 resources/*
+
+# environement files
+.env
