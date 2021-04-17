@@ -4,10 +4,12 @@ import * as THREE from 'three'
  * Loading Screen
  */
 export default class LoadingScreen {
-    constructor() {
-        this.overlayGeometry = new THREE.PlaneGeometry(2, 2, 1, 1)
+    constructor(scene) {
+        this._scene = scene
 
-        this.overlayMaterial = new THREE.ShaderMaterial({
+        this.overlay = null
+        this.geometry = new THREE.PlaneGeometry(2, 2, 1, 1)
+        this.material = new THREE.ShaderMaterial({
             uniforms: {
                 uAlpha: { value: 1 }
             },
@@ -27,14 +29,21 @@ export default class LoadingScreen {
             depthWrite: false
         })
 
-        this.overlay = new THREE.Mesh(this.overlayGeometry, this.overlayMaterial)
-
         this.loadingBarElement = document.querySelector('.loading-squares')
     }
 
-
+    /**
+     * Material alpha value
+     * 
+     * @returns {Number}
+     */
     get uAlpha() {
-        return this.overlayMaterial.uniforms.uAlpha
+        return this.material.uniforms.uAlpha
+    }
+
+    init() {
+        this.overlay = new THREE.Mesh(this.geometry, this.material)
+        this._scene.add(this.overlay)
     }
 
     loaded() {
