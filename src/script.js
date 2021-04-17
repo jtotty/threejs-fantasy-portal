@@ -171,6 +171,7 @@ gltfLoader.load(
     }
 )
 
+
 /**
  * Particles
  */
@@ -222,8 +223,15 @@ const onLoaded = () => {
 
     button.classList.add('show')
     button.addEventListener('click', () => {
-        if (!diceRoll.animating) diceRoll.roll()
+        if (!diceRoll.animating) {
+            diceRoll.roll()
+            gui.updateDisplay()
+        }
     })
+
+    gui.add(d20Model.rotation, 'x').min(-6.28319).max(6.28319).step(0.001)
+    gui.add(d20Model.rotation, 'y').min(-6.28319).max(6.28319).step(0.001)
+    gui.add(d20Model.rotation, 'z').min(-6.28319).max(6.28319).step(0.001)
 }
 
 /**
