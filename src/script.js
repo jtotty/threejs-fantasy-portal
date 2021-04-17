@@ -47,6 +47,16 @@ const canvas = document.querySelector('canvas.webgl')
 // Scene
 const scene = new THREE.Scene()
 
+// Loading Screen
+const loadingScreen = new LoadingScreen(scene)
+loadingScreen.init()
+ 
+// Axis Helper
+if (!process.env.PRODUCTION) {
+    const axesHelper = new THREE.AxesHelper( 5 );
+    scene.add(axesHelper);
+}
+
 /**
  * Loaders
  */
@@ -65,25 +75,15 @@ const scene = new THREE.Scene()
 /**
  * Textures
  */
- const textureLoader = new THREE.TextureLoader(loadingManager)
+const textureLoader = new THREE.TextureLoader(loadingManager)
 
- const bakedTexture = textureLoader.load('baked.jpg')
- bakedTexture.flipY = false
- bakedTexture.encoding = THREE.sRGBEncoding
- 
- const d20Texture = textureLoader.load('d20.jpg')
- d20Texture.flipY = false
- d20Texture.encoding = THREE.sRGBEncoding
- 
- // Loading Screen
- const loadingScreen = new LoadingScreen()
- scene.add(loadingScreen.overlay)
- 
- // Axis Helper
- if (!process.env.PRODUCTION) {
-    const axesHelper = new THREE.AxesHelper( 5 );
-    scene.add(axesHelper);
- }
+const bakedTexture = textureLoader.load('baked.jpg')
+bakedTexture.flipY = false
+bakedTexture.encoding = THREE.sRGBEncoding
+
+const d20Texture = textureLoader.load('d20.jpg')
+d20Texture.flipY = false
+d20Texture.encoding = THREE.sRGBEncoding
 
 /**
  * Model Loaders
@@ -174,11 +174,6 @@ gltfLoader.load(
 /**
  * Particles
  */
-debugObject.firefliesCount = 5000
-debugObject.firefliesSize = Math.floor(70 * (window.innerHeight / 1440))
-debugObject.insideColor = '#ffffff'
-debugObject.outsideColor = '#0f3dac'
-
 const particles = new Particles(scene)
 
 gui.add(particles.props, 'size').min(0).max(100).step(1).onFinishChange(value => {
@@ -190,7 +185,7 @@ gui.add(particles.props, 'count').min(0).max(10000).step(10).onFinishChange(valu
 gui.addColor(particles.props, 'insideColor').onFinishChange(value => {
     particles.updateProps('insideColor', value)
 })
-gui.addColor(debugObject, 'outsideColor').onFinishChange(value => {
+gui.addColor(particles.props, 'outsideColor').onFinishChange(value => {
     particles.updateProps('outsideColor', value)
 })
 

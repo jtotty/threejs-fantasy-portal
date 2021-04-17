@@ -1,6 +1,6 @@
 import * as THREE from 'three'
-import firefliesVertexShader from '../shaders/fireflies/vertex.glsl'
-import firefliesFragmentShader from '../shaders/fireflies/fragment.glsl'
+import particleVertexShader from '../shaders/particles/vertex.glsl'
+import particleFragmentShader from '../shaders/particles/fragment.glsl'
 
 export default class Particles {
     /**
@@ -25,17 +25,15 @@ export default class Particles {
                 uSize: { value: this.props.size }
             },
             vertexColors: true,
-            vertexShader: firefliesVertexShader,
-            fragmentShader: firefliesFragmentShader,
+            vertexShader: particleVertexShader,
+            fragmentShader: particleFragmentShader,
             blending: THREE.AdditiveBlending,
             depthWrite: false
         })
     }
 
     /**
-     * Create our points.
-     *
-     * @returns THREE.Points
+     * Create our particles!
      */
     init() {
         const positionArray = new Float32Array(this.props.count * 3)
