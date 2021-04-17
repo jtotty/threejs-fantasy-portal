@@ -6,7 +6,6 @@ import * as THREE from 'three'
 export default class LoadingScreen {
     constructor() {
         this.overlayGeometry = new THREE.PlaneGeometry(2, 2, 1, 1)
-
         this.overlayMaterial = new THREE.ShaderMaterial({
             uniforms: {
                 uAlpha: { value: 1 }
@@ -26,9 +25,7 @@ export default class LoadingScreen {
             transparent: true,
             depthWrite: false
         })
-
         this.overlay = new THREE.Mesh(this.overlayGeometry, this.overlayMaterial)
-
         this.loadingBarElement = document.querySelector('.loading-squares')
     }
 

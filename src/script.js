@@ -10,14 +10,13 @@ import { gsap } from 'gsap'
 
 // Custom modules
 import LoadingScreen from './modules/loadingScreen.js'
+import Particles from './modules/particles.js'
 import DiceRoll from './modules/diceRoll.js'
 
 // FPS Counter
 import Stats from 'stats.js'
 
 // Shaders
-import firefliesVertexShader from './shaders/fireflies/vertex.glsl'
-import firefliesFragmentShader from './shaders/fireflies/fragment.glsl'
 import portalVertexShader from './shaders/portal/vertex.glsl'
 import portalFragmentShader from './shaders/portal/fragment.glsl'
 
@@ -39,7 +38,7 @@ document.body.appendChild( stats.dom )
 
 if (process.env.PRODUCTION) {
     gui.hide()
-    stats.dom.classList.add('hide-stats')
+    stats.dom.classList.add('hide')
 }
 
 // Canvas
@@ -56,9 +55,9 @@ const scene = new THREE.Scene()
     () => {
         onLoaded()
         gsap.delayedCall(0.5, () => {
-            gsap.to(loadingScreen.uAlpha, { duration: 0.5, value: 0 })
+            gsap.to(loadingScreen.uAlpha, { duration: 2, value: 0, ease: 'power2.in' })
             loadingScreen.loaded()
-            generateFireflies()
+            particles.init()
         })
     }
  )
@@ -81,8 +80,10 @@ const scene = new THREE.Scene()
  scene.add(loadingScreen.overlay)
  
  // Axis Helper
- const axesHelper = new THREE.AxesHelper( 5 );
- scene.add(axesHelper);
+ if (!process.env.PRODUCTION) {
+    const axesHelper = new THREE.AxesHelper( 5 );
+    scene.add(axesHelper);
+ }
 
 /**
  * Model Loaders
@@ -171,86 +172,27 @@ gltfLoader.load(
 )
 
 /**
- * Fireflies
+ * Particles
  */
 debugObject.firefliesCount = 5000
-debugObject.firefliesSize = 70 * (window.innerHeight / 1440)
+debugObject.firefliesSize = Math.floor(70 * (window.innerHeight / 1440))
 debugObject.insideColor = '#ffffff'
 debugObject.outsideColor = '#0f3dac'
 
-let firefliesGeometry = null
-let firefliesMaterial = null
-let fireflies = null
+const particles = new Particles(scene)
 
-const generateFireflies = () =>
-{
-    if (fireflies !== null) {
-        firefliesGeometry.dispose()
-        firefliesMaterial.dispose()
-        scene.remove(fireflies)
-    }
-
-    // Geometry
-    firefliesGeometry = new THREE.BufferGeometry()
-
-    const positionArray = new Float32Array(debugObject.firefliesCount * 3)
-    const colorsArray = new Float32Array(debugObject.firefliesCount * 3)
-    const scaleArray = new Float32Array(debugObject.firefliesCount)
-
-    const insideColor = new THREE.Color(debugObject.insideColor)
-    const outsideColor = new THREE.Color(debugObject.outsideColor)
-
-    for (let i = 0; i < debugObject.firefliesCount; i++) {
-        const i3 = i * 3
-        positionArray[i3 + 0] = (Math.random() - 0.5) * 4
-        positionArray[i3 + 1] = 1
-        positionArray[i3 + 2] = (Math.random() - 0.5) * 4
-
-        scaleArray[i] = Math.random()
-
-        // Color
-        const radius = Math.random() * 2
-        const mixedColor = insideColor.clone()
-        mixedColor.lerp(outsideColor, radius / 2)
-
-        colorsArray[i3    ] = mixedColor.r
-        colorsArray[i3 + 1] = mixedColor.g
-        colorsArray[i3 + 2] = mixedColor.b
-    }
-
-    firefliesGeometry.setAttribute('position', new THREE.BufferAttribute(positionArray, 3))
-    firefliesGeometry.setAttribute('aScale', new THREE.BufferAttribute(positionArray, 1))
-    firefliesGeometry.setAttribute('color', new THREE.BufferAttribute(colorsArray, 3))
-
-    // Material
-    firefliesMaterial = new THREE.ShaderMaterial({
-        uniforms: {
-            uTime: { value: 0 },
-            uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) },
-            uSize: { value: debugObject.firefliesSize }
-        },
-        vertexColors: true,
-        vertexShader: firefliesVertexShader,
-        fragmentShader: firefliesFragmentShader,
-        transparent: true,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false
-    })
-
-    // Points
-    fireflies = new THREE.Points(firefliesGeometry, firefliesMaterial)
-    scene.add(fireflies)
-}
-
-gui.add(debugObject, 'firefliesSize').min(0).max(100).step(1).onFinishChange(generateFireflies)
-gui.add(debugObject, 'firefliesCount').min(0).max(10000).step(10).onFinishChange(generateFireflies)
-gui.addColor(debugObject, 'insideColor').onFinishChange(generateFireflies)
-gui.addColor(debugObject, 'outsideColor').onFinishChange(generateFireflies)
-
-/**
- * Portal
- */
-// Geometry
+gui.add(particles.props, 'size').min(0).max(100).step(1).onFinishChange(value => {
+    particles.updateProps('size', value)
+})
+gui.add(particles.props, 'count').min(0).max(10000).step(10).onFinishChange(value => {
+    particles.updateProps('count', value)
+})
+gui.addColor(particles.props, 'insideColor').onFinishChange(value => {
+    particles.updateProps('insideColor', value)
+})
+gui.addColor(debugObject, 'outsideColor').onFinishChange(value => {
+    particles.updateProps('outsideColor', value)
+})
 
 /**
  * Sizes
@@ -274,13 +216,18 @@ const onLoaded = () => {
         renderer.setSize(sizes.width, sizes.height)
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
-        // Update fireflies
-        firefliesMaterial.uniforms.uPixelRatio.value = Math.min(window.devicePixelRatio, 2)
-        
-        const size = 70 * (window.innerHeight / 1440)
-        firefliesMaterial.uniforms.uSize.value = size
-        debugObject.firefliesSize = size
+        // Update particles
+        particles.updateSizes()
         gui.updateDisplay()
+    })
+
+    // Dice roll button
+    const button = document.querySelector('.btn')
+    const diceRoll = new DiceRoll(d20Model)
+
+    button.classList.add('show')
+    button.addEventListener('click', () => {
+        if (!diceRoll.animating) diceRoll.roll()
     })
 }
 
@@ -322,25 +269,16 @@ gui
  */
 const clock = new THREE.Clock()
 
-const tick = () =>
-{
-    stats.begin()
-
+const tick = () => {
     const elapsedTime = clock.getElapsedTime()
 
+    stats.begin()
+
     // Update fireflies
-    if (fireflies != null) {
-        firefliesMaterial.uniforms.uTime.value = elapsedTime
-    }
+    particles.animate(elapsedTime)
 
     // Update portal
     portalLightMaterial.uniforms.uTime.value = elapsedTime
-
-    if (d20Model) {
-        d20Model.rotation.x = elapsedTime * 0.5
-        d20Model.rotation.y = elapsedTime
-        d20Model.rotation.z = elapsedTime * 1.5
-    }
 
     // Update controls
     controls.update()
