@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { gsap } from 'gsap'
 import particleVertexShader from '../shaders/particles/vertex.glsl'
 import particleFragmentShader from '../shaders/particles/fragment.glsl'
 
@@ -21,6 +22,7 @@ export default class Particles {
         this.material = new THREE.ShaderMaterial({
             uniforms: {
                 uTime: { value: 0 },
+                uAlpha: { value: 1 },
                 uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) },
                 uSize: { value: this.props.size }
             },
@@ -66,6 +68,7 @@ export default class Particles {
         this.geometry.setAttribute('color', new THREE.BufferAttribute(colorsArray, 3))
 
         this.points = new THREE.Points(this.geometry, this.material)
+        this.points.name = 'points'
 
         this._scene.add(this.points)
     }
@@ -117,5 +120,16 @@ export default class Particles {
         this.material.uniforms.uPixelRatio.value = Math.min(window.devicePixelRatio, 2)
         this.material.uniforms.uSize.value = Math.floor(70 * (window.innerHeight / 1440))
         this.props.size = this.material.uniforms.uSize.value
+    }
+
+    /**
+     * Fade out to 0 opacity
+     */
+    fade(duration, alpha) {
+        gsap.to(this.material.uniforms.uAlpha, {
+            duration,
+            value: alpha,
+            ease: 'sine.in'
+        })
     }
 }

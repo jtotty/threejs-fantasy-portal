@@ -1,4 +1,5 @@
 uniform float uTime;
+uniform float uAlpha;
 uniform vec3 uColorStart;
 uniform vec3 uColorEnd;
 
@@ -98,5 +99,5 @@ void main() {
     // Colours
     vec3 color = mix(uColorStart, uColorEnd, strength);
     
-    gl_FragColor = vec4(color, 1.0);
+    gl_FragColor = vec4(color, uAlpha);
 }

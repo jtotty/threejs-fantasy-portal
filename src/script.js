@@ -54,7 +54,7 @@ loadingScreen.init()
 // Axis Helper
 if (!process.env.PRODUCTION) {
     const axesHelper = new THREE.AxesHelper(5)
-    scene.add(axesHelper)
+    // scene.add(axesHelper)
 }
 
 /**
@@ -127,6 +127,7 @@ gui
 const portalLightMaterial = new THREE.ShaderMaterial({
     uniforms: {
         uTime: { value: 0 },
+        uAlpha: { value: 1 },
         uColorStart: { value: new THREE.Color(debugObject.portalColorStart) },
         uColorEnd: { value: new THREE.Color(debugObject.portalColorEnd) }
     },
@@ -137,6 +138,7 @@ const portalLightMaterial = new THREE.ShaderMaterial({
 /**
  * Main scene
  */
+let mainModel;
 gltfLoader.load(
     'portal.glb',
     gltf => {
@@ -145,13 +147,13 @@ gltfLoader.load(
         const lampLightBMesh = gltf.scene.children.find(child => child.name === 'lampLightB')
         const portalLightMesh = gltf.scene.children.find(child => child.name === 'portalLight')
 
-
         bakedMesh.material = bakedMaterial
         lampLightAMesh.material = lampLightMaterial
         lampLightBMesh.material = lampLightMaterial
         portalLightMesh.material = portalLightMaterial
 
-        scene.add(gltf.scene)
+        mainModel = gltf.scene
+        scene.add(mainModel)
     }
 )
 
@@ -162,15 +164,13 @@ let d20Model
 gltfLoader.load(
     'd20.glb',
     gltf => {
-        const d20Mesh = gltf.scene.children.find(child => child.name === 'd20')
-        d20Mesh.scale.set(0.06, 0.06, 0.06)
-        d20Mesh.position.set(0, 2.05, - 1.8)
-        d20Mesh.material = d20Material
-        d20Model = d20Mesh
+        d20Model = gltf.scene.children.find(child => child.name === 'd20')
+        d20Model.scale.set(0.06, 0.06, 0.06)
+        d20Model.position.set(0, 2.1, - 1.8)
+        d20Model.material = d20Material
         scene.add(d20Model)
     }
 )
-
 
 /**
  * Particles
@@ -198,6 +198,7 @@ const sizes = {
     height: window.innerHeight
 }
 
+let nat1 = false;
 const onLoaded = () => {
     window.addEventListener('resize', () => {
         // Update sizes
@@ -218,20 +219,100 @@ const onLoaded = () => {
     })
 
     // Dice roll button
-    const button = document.querySelector('.btn')
     const diceRoll = new DiceRoll(d20Model)
+    const button = document.querySelector('.btn')
 
     button.classList.add('show')
     button.addEventListener('click', () => {
         if (!diceRoll.animating) {
-            diceRoll.roll()
-            gui.updateDisplay()
+            diceRoll.roll().then(value => {
+                console.log(mainModel.children)
+                if (value === 1 && !nat1) {
+                    mainModel.children.forEach(child => {
+                        child.material.transparent = true
+
+                        gsap.to(child.material, {
+                            duration: 1,
+                            opacity: 0,
+                            ease: 'sine.in'
+                        })
+
+                        gsap.to(child.scale, {
+                            duration: 1,
+                            x: 0,
+                            y: 0,
+                            z: 0,
+                            ease: 'sine.in'
+                        })
+
+                        gsap.to(child.position, {
+                            duration: 1,
+                            x: 0,
+                            y: 0,
+                            z: 0,
+                            ease: 'sine.in'
+                        })
+                    })
+    
+                    gsap.to(portalLightMaterial.uniforms.uAlpha, {
+                        duration: 1,
+                        value: 0,
+                        ease: 'sine.in'
+                    })
+    
+                    particles.fade(1, 0)
+    
+                    gsap.to(debugObject, {
+                        duration: 1,
+                        clearColor: '#000000', 
+                        ease: 'sine.in',
+                        onUpdate() {
+                            renderer.setClearColor(debugObject.clearColor)
+                        },
+                        onComplete() {
+                            gui.updateDisplay()
+                        }
+                    })
+
+                    nat1 = true
+                }
+
+                if (value !== 1 && nat1) {
+                    mainModel.children.forEach(child => {
+                        child.material.transparent = true
+    
+                        gsap.to(child.material, {
+                            duration: 1,
+                            opacity: 1,
+                            ease: 'sine.in'
+                        })
+                    })
+    
+                    gsap.to(portalLightMaterial.uniforms.uAlpha, {
+                        duration: 1,
+                        value: 1,
+                        ease: 'sine.in'
+                    })
+    
+                    particles.fade(1, 1)
+    
+                    gsap.to(debugObject, {
+                        duration: 1,
+                        clearColor: '#353543', 
+                        ease: 'sine.in',
+                        onUpdate() {
+                            renderer.setClearColor(debugObject.clearColor)
+                        },
+                        onComplete() {
+                            gui.updateDisplay()
+                        }
+                    })
+
+                    nat1 = false
+                }
+            })   
         }
     })
-
-    gui.add(d20Model.rotation, 'x').min(-6.28319).max(6.28319).step(0.001)
-    gui.add(d20Model.rotation, 'y').min(-6.28319).max(6.28319).step(0.001)
-    gui.add(d20Model.rotation, 'z').min(-6.28319).max(6.28319).step(0.001)
 }
 
 /**
@@ -282,6 +363,11 @@ const tick = () => {
 
     // Update portal
     portalLightMaterial.uniforms.uTime.value = elapsedTime
+
+    // Float Dice
+    if (d20Model != null) {
+        d20Model.position.y += Math.sin(elapsedTime * 2) * 0.001
+    }
 
     // Update controls
     controls.update()
