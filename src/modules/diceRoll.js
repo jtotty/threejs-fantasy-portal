@@ -27,13 +27,13 @@ export default class DiceRoll {
             { value: 20, euler: { x: 0,      y: 3.14159, z: 3.14159 } }
         ]
 
-        this.valueElement = document.querySelector('.dice-value')
+        // this.valueElement = document.querySelector('.dice-value')
     }
 
     roll() {
         return new Promise(resolve => {
             // const value = Math.floor(Math.random() * 20 + 1)
-            const value = 1
+            const value = Math.floor(Math.random() * 2 + 1)
             const face = this.faces.find(face => face.value === value)
 
             gsap.to(this.diceModel.rotation, {
@@ -55,7 +55,7 @@ export default class DiceRoll {
                     this.animating = true
                 },
                 onComplete: () => {
-                    this.valueElement.innerHTML = value
+                    // this.valueElement.innerHTML = value
                     this.animating = false
                     resolve(value)
                 }
