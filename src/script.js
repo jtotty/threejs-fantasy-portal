@@ -109,9 +109,15 @@ const lampLightMaterial = new THREE.MeshBasicMaterial({ color: 0xffffb8 })
 // d20 material
 const d20Material = new THREE.MeshBasicMaterial({ map: d20Texture })
 
-// debugObject.portalColorStart = '#a3c5e1'
-debugObject.portalColorStart = '#ffffff'
+debugObject.distance = 1.4
+debugObject.portalColorStart = '#a3c5e1'
 debugObject.portalColorEnd = '#ffffff'
+
+gui
+    .add(debugObject, 'distance').min(-1).max(10).step(0.1)
+    .onChange(() => {
+        portalLightMaterial.uniforms.uDistance.value = debugObject.distance
+    })
 
 gui
     .addColor(debugObject, 'portalColorStart')
@@ -130,6 +136,7 @@ const portalLightMaterial = new THREE.ShaderMaterial({
     uniforms: {
         uTime: { value: 0 },
         uAlpha: { value: 1 },
+        uDistance: { value : 1.4 },
         uColorStart: { value: new THREE.Color(debugObject.portalColorStart) },
         uColorEnd: { value: new THREE.Color(debugObject.portalColorEnd) }
     },
@@ -174,6 +181,7 @@ gltfLoader.load(
  * d20 Dice
  */
 let d20Model
+let diceRoll
 gltfLoader.load(
     'd20.glb',
     gltf => {
@@ -182,6 +190,9 @@ gltfLoader.load(
         d20Model.position.set(0, 2.1, - 1.8)
         d20Model.material = d20Material
         scene.add(d20Model)
+
+        // Dice roll button
+        diceRoll = new DiceRoll(d20Model)
     }
 )
 
@@ -206,7 +217,7 @@ gui.addColor(particles.props, 'outsideColor').onFinishChange(value => {
 /**
  * Fonts
  */
-let diceText = '20'
+let diceText = ''
 let diceNumber
 const fontLoader = new THREE.FontLoader()
 fontLoader.load(
@@ -216,14 +227,58 @@ fontLoader.load(
             font,
             diceText,
             scene,
-            '#ffffff',
-            '#ffffff'
+            '#2575c8',
+            '#a3c5e1'
         )
         diceNumber.init()
     }
 )
 
+/**
+ * Animate portal shader colours to allow number to appear in center
+ */
+const fadeNumberIn = value => {
+    gsap.to(debugObject, {
+        duration: 2,
+        distance: -1,
+        ease: 'sine.in',
+        onUpdate: () => {
+            portalLightMaterial.uniforms.uDistance.value = debugObject.distance
+        },
+        onComplete: () => {
+            // Display value in portal
+            diceNumber.updateNumber(value)
+            diceNumber.fadeIn()
+            diceRoll.animating = false
+        }
+    })
+}
 
+const fadeNumberOut = async value => {
+    await diceNumber.fadeOut()
+
+    gsap.to(debugObject, {
+        duration: 2,
+        distance: 1.5,
+        ease: 'sine.in',
+        onUpdate: () => {
+            portalLightMaterial.uniforms.uDistance.value = debugObject.distance
+        },
+        onComplete: () => {
+            fadeNumberIn(value)
+        }
+    })
+}
+
+let firstRoll = true
+const updatePortal = value => {
+    if (firstRoll) {
+        fadeNumberIn(value)
+        firstRoll = false
+    } else {
+        fadeNumberOut(value)
+    }
+}
 
 /**
  * Make the scene vanish
@@ -351,7 +406,7 @@ const sizes = {
     height: window.innerHeight
 }
 
-let nat1 = false;
+let nat1 = false
 const onLoaded = () => {
     window.addEventListener('resize', () => {
         // Update sizes
@@ -371,15 +426,13 @@ const onLoaded = () => {
         gui.updateDisplay()
     })
 
-    // Dice roll button
-    const diceRoll = new DiceRoll(d20Model)
     const button = document.querySelector('.btn')
 
     button.classList.add('show')
     button.addEventListener('click', () => {
         if (!diceRoll.animating) {
             diceRoll.roll().then(value => {
-                diceNumber.updateNumber(value)
+                updatePortal(value)
 
                 // if (value === 1 && !nat1) {
                 //     dissapearScene()

@@ -1,5 +1,6 @@
 uniform float uTime;
 uniform float uAlpha;
+uniform float uDistance;
 uniform vec3 uColorStart;
 uniform vec3 uColorEnd;
 
@@ -87,7 +88,7 @@ void main() {
     float strength = cnoise(vec3(displacedUv * 5.0, uTime * 0.2));
 
     // Outer glow
-    float outerGlow = distance(vUv, vec2(0.5)) * 5.0 - 1.4;
+    float outerGlow = distance(vUv, vec2(0.5)) * 5.0 - uDistance;
     strength += outerGlow;
 
     // Apply step

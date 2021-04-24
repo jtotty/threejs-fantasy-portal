@@ -22,6 +22,7 @@ export default class DiceNumber {
             uniforms: {
                 uTime: { value: 0 },
                 uAlpha: { value: 1 },
+                uDistance: { value: -2 },
                 uColorStart: { value: new THREE.Color(startColor) },
                 uColorEnd: { value: new THREE.Color(endColor) }
             },
@@ -83,17 +84,43 @@ export default class DiceNumber {
         
         this.geometry = this.createTextGeometry(text, this._font)
         this.init()
+    }
 
-        const colors = {  start: '#ffffff', end: '#ffffff' }
-        gsap.to(colors, {
-            duration: 1,
-            start: '#a3c5e1',
-            end: '#2575c8',
+    destroy() {
+        if (this.diceNumber != null) {
+            this.geometry.dispose()
+            this.material.dispose()
+            this._scene.remove(this.diceNumber)
+        }
+    }
+
+    fadeIn() {
+        const distance = { value: -2 }
+        gsap.to(distance, {
+            duration: 2,
+            value: 1.4,
             ease: 'sine.in',
             onUpdate: () => {
-                this.material.uniforms.uColorStart.value.set(colors.start)
-                this.material.uniforms.uColorEnd.value.set(colors.end)
+                this.material.uniforms.uDistance.value = distance.value
             }
+        })
+    }
+
+    fadeOut() {
+        return new Promise(resolve => {
+            const distance = { value: 1.4 }
+            gsap.to(distance, {
+                duration: 2,
+                value: -2,
+                ease: 'sine.in',
+                onUpdate: () => {
+                    this.material.uniforms.uDistance.value = distance.value
+                },
+                onComplete: () => {
+                    this.destroy()
+                    resolve()
+                }
+            })
         })
     }
 
