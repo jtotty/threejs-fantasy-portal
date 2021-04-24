@@ -92,7 +92,7 @@ void main() {
     strength += outerGlow;
 
     // Apply step
-    strength += step(- 0.2, strength) * 0.8;
+    strength += step(- 0.01, strength) * 0.8;
 
     // Clamp the value from 0 to 1
     // strength = clamp(strength, 0.0, 1.0);

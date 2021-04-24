@@ -223,13 +223,7 @@ const fontLoader = new THREE.FontLoader()
 fontLoader.load(
     '/fonts/Fredoka_One_Regular.json',
     font => {
-        diceNumber = new DiceNumber(
-            font,
-            diceText,
-            scene,
-            '#2575c8',
-            '#a3c5e1'
-        )
+        diceNumber = new DiceNumber(font, diceText, scene)
         diceNumber.init()
     }
 )
@@ -237,48 +231,32 @@ fontLoader.load(
 /**
  * Animate portal shader colours to allow number to appear in center
  */
-const fadeNumberIn = value => {
+const portalShrink = value => {
     gsap.to(debugObject, {
-        duration: 2,
+        duration: 1,
         distance: -1,
         ease: 'sine.in',
         onUpdate: () => {
             portalLightMaterial.uniforms.uDistance.value = debugObject.distance
         },
         onComplete: () => {
-            // Display value in portal
             diceNumber.updateNumber(value)
-            diceNumber.fadeIn()
-            diceRoll.animating = false
+            
+            gsap.to(debugObject, {
+                duration: 1,
+                distance: 1.5,
+                ease: 'sine.in',
+                onUpdate: () => {
+                    portalLightMaterial.uniforms.uDistance.value = debugObject.distance
+                },
+                onComplete: () => {
+                    diceRoll.animating = false
+                }
+            })
         }
     })
 }
 
-const fadeNumberOut = async value => {
-    await diceNumber.fadeOut()
-
-    gsap.to(debugObject, {
-        duration: 2,
-        distance: 1.5,
-        ease: 'sine.in',
-        onUpdate: () => {
-            portalLightMaterial.uniforms.uDistance.value = debugObject.distance
-        },
-        onComplete: () => {
-            fadeNumberIn(value)
-        }
-    })
-}
-
-let firstRoll = true
-const updatePortal = value => {
-    if (firstRoll) {
-        fadeNumberIn(value)
-        firstRoll = false
-    } else {
-        fadeNumberOut(value)
-    }
-}
 
 /**
  * Make the scene vanish
@@ -427,22 +405,22 @@ const onLoaded = () => {
     })
 
     const button = document.querySelector('.btn')
-
     button.classList.add('show')
+
     button.addEventListener('click', () => {
         if (!diceRoll.animating) {
             diceRoll.roll().then(value => {
-                updatePortal(value)
+                portalShrink(value)
 
-                // if (value === 1 && !nat1) {
-                //     dissapearScene()
-                //     nat1 = true
-                // }
+                if (value === 1 && !nat1) {
+                    dissapearScene()
+                    nat1 = true
+                }
 
-                // if (value !== 1 && nat1) {
-                //     appearScene()
-                //     nat1 = false
-                // }
+                if (value !== 1 && nat1) {
+                    appearScene()
+                    nat1 = false
+                }
             })   
         }
     })
@@ -499,10 +477,6 @@ const tick = () => {
 
     // Update portal
     portalLightMaterial.uniforms.uTime.value = delta
-    
-    if (diceNumber != null) {
-        diceNumber.animateShader(delta)
-    }
 
     // Float Dice
     if (d20Model != null) {

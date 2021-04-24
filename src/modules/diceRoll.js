@@ -29,8 +29,6 @@ export default class DiceRoll {
             { value: 19, euler: { x: 0.704,  y: -0.091,  z: 1.07    } },
             { value: 20, euler: { x: 0,      y: 3.14159, z: 3.14159 } }
         ]
-
-        // this.valueElement = document.querySelector('.dice-value')
     }
 
     /**
@@ -61,7 +59,6 @@ export default class DiceRoll {
                     this.animating = true
                 },
                 onComplete: () => {
-                    // this.valueElement.innerHTML = value
                     resolve(value)
                 }
             })
