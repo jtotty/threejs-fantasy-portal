@@ -1,8 +1,17 @@
 import * as THREE from 'three'
+import { gsap } from 'gsap'
 import numbersVertexShader from '../shaders/numbers/vertex.glsl'
 import numbersFragmentShader from '../shaders/numbers/fragment.glsl'
 
 export default class DiceNumber {
+    /**
+     * Create our dice number
+     * @param {JSON} font 
+     * @param {String} text 
+     * @param {THREE.Scene} scene 
+     * @param {String} startColor 
+     * @param {String} endColor 
+     */
     constructor(font, text, scene, startColor, endColor) {
         this._scene = scene
         this._font = font
@@ -27,13 +36,12 @@ export default class DiceNumber {
     init() {
         this.geometry.center()
         this.diceNumber = new THREE.Mesh(this.geometry, this.material)
-        this.diceNumber.position.y = 1
+        this.diceNumber.position.set(0, 0.9, -1.8)
         this._scene.add(this.diceNumber)
     }
 
     /**
      * Animate shader material
-     *
      * @param {Number} delta 
      */
     animateShader(delta) {
@@ -42,28 +50,21 @@ export default class DiceNumber {
 
     /**
      * Create the THREE TextGeometry
-     * 
      * @param {String} text 
      * @param {JSON} font 
-     * @returns THREE.TextGeometry
+     * @returns {THREE.TextGeometry}
      */
     createTextGeometry(text, font) {
-        if (typeof text === 'number') {
-            text = text.toString()
-        }
+        text = (typeof text === 'number') ? text.toString() : text;
 
         return new THREE.TextGeometry(
             text,
             {
                 font,
                 size: 0.5,
-                height: 0.2,
-                curveSegments: 12,
-                bevelEnabled: false,
-                bevelThickness: 0.001,
-                bevelSize: 0.02,
-                bevelOffset: 0,
-                bevelSegments: 5
+                height: 0.01,
+                curveSegments: 124,
+                bevelEnabled: false
             }
         )
     }
@@ -82,6 +83,18 @@ export default class DiceNumber {
         
         this.geometry = this.createTextGeometry(text, this._font)
         this.init()
+
+        const colors = {  start: '#ffffff', end: '#ffffff' }
+        gsap.to(colors, {
+            duration: 1,
+            start: '#a3c5e1',
+            end: '#2575c8',
+            ease: 'sine.in',
+            onUpdate: () => {
+                this.material.uniforms.uColorStart.value.set(colors.start)
+                this.material.uniforms.uColorEnd.value.set(colors.end)
+            }
+        })
     }
 
     /**

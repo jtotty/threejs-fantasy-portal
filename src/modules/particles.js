@@ -86,14 +86,6 @@ export default class Particles {
         }
     }
 
-    remove() {
-        if (this.points != null) {
-            this.geometry.dispose()
-            this.material.dispose()
-            this._scene.remove(this.points)
-        }
-    }
-
     /**
      * Update properties.
      * 

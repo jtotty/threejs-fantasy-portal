@@ -1,6 +1,9 @@
 import { gsap } from 'gsap'
 
 export default class DiceRoll {
+    /**
+     * @param {Object} model Dice Model
+     */
     constructor(model) {
         this.diceModel = model
         this.animating = false
@@ -30,10 +33,13 @@ export default class DiceRoll {
         // this.valueElement = document.querySelector('.dice-value')
     }
 
+    /**
+     * Roll animation and stop on random number between 1 - 20
+     * @returns {Promise} Promise object represents the rolled value
+     */
     roll() {
         return new Promise(resolve => {
-            // const value = Math.floor(Math.random() * 20 + 1)
-            const value = Math.floor(Math.random() * 2 + 1)
+            const value = Math.floor(Math.random() * 20 + 1)
             const face = this.faces.find(face => face.value === value)
 
             gsap.to(this.diceModel.rotation, {

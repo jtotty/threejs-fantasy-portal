@@ -20,8 +20,6 @@ import Stats from 'stats.js'
 // Shaders
 import portalVertexShader from './shaders/portal/vertex.glsl'
 import portalFragmentShader from './shaders/portal/fragment.glsl'
-import numbersVertexShader from './shaders/numbers/vertex.glsl'
-import numbersFragmentShader from './shaders/numbers/fragment.glsl'
 
 /**
  * Base
@@ -111,7 +109,8 @@ const lampLightMaterial = new THREE.MeshBasicMaterial({ color: 0xffffb8 })
 // d20 material
 const d20Material = new THREE.MeshBasicMaterial({ map: d20Texture })
 
-debugObject.portalColorStart = '#a3c5e1'
+// debugObject.portalColorStart = '#a3c5e1'
+debugObject.portalColorStart = '#ffffff'
 debugObject.portalColorEnd = '#ffffff'
 
 gui
@@ -217,8 +216,8 @@ fontLoader.load(
             font,
             diceText,
             scene,
-            debugObject.portalColorStart,
-            debugObject.portalColorEnd
+            '#ffffff',
+            '#ffffff'
         )
         diceNumber.init()
     }
@@ -382,15 +381,15 @@ const onLoaded = () => {
             diceRoll.roll().then(value => {
                 diceNumber.updateNumber(value)
 
-                if (value === 1 && !nat1) {
-                    dissapearScene()
-                    nat1 = true
-                }
+                // if (value === 1 && !nat1) {
+                //     dissapearScene()
+                //     nat1 = true
+                // }
 
-                if (value !== 1 && nat1) {
-                    appearScene()
-                    nat1 = false
-                }
+                // if (value !== 1 && nat1) {
+                //     appearScene()
+                //     nat1 = false
+                // }
             })   
         }
     })
@@ -454,7 +453,7 @@ const tick = () => {
 
     // Float Dice
     if (d20Model != null) {
-        d20Model.position.y += Math.sin(delta * 2) * 0.001
+        d20Model.position.y += Math.sin(delta * 2) * 0.0005
     }
 
     // Update controls
