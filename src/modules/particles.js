@@ -1,10 +1,11 @@
 import * as THREE from 'three'
+import { gsap } from 'gsap'
 import particleVertexShader from '../shaders/particles/vertex.glsl'
 import particleFragmentShader from '../shaders/particles/fragment.glsl'
 
 export default class Particles {
     /**
-     * Create our Particles.
+     * @param {THREE.Scene} scene
      */
     constructor(scene) {
         this._scene = scene
@@ -21,6 +22,7 @@ export default class Particles {
         this.material = new THREE.ShaderMaterial({
             uniforms: {
                 uTime: { value: 0 },
+                uAlpha: { value: 1 },
                 uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) },
                 uSize: { value: this.props.size }
             },
@@ -33,7 +35,7 @@ export default class Particles {
     }
 
     /**
-     * Create our particles!
+     * Initialise our particles and add to the scene.
      */
     init() {
         const positionArray = new Float32Array(this.props.count * 3)
@@ -66,6 +68,8 @@ export default class Particles {
         this.geometry.setAttribute('color', new THREE.BufferAttribute(colorsArray, 3))
 
         this.points = new THREE.Points(this.geometry, this.material)
+        this.points.frustumCulled = false
+        this.points.name = 'points'
 
         this._scene.add(this.points)
     }
@@ -78,7 +82,6 @@ export default class Particles {
             this.geometry.dispose()
             this.material.dispose()
             this._scene.remove(this.points)
-
             this.init()
         }
     }
@@ -117,5 +120,28 @@ export default class Particles {
         this.material.uniforms.uPixelRatio.value = Math.min(window.devicePixelRatio, 2)
         this.material.uniforms.uSize.value = Math.floor(70 * (window.innerHeight / 1440))
         this.props.size = this.material.uniforms.uSize.value
+    }
+
+    /**
+     * Fade in or out
+     * 
+     * @param {Number} duration 
+     * @param {Number} alpha 
+     * @param {Object} scale 
+     */
+    fade(duration, alpha, scale) {
+        gsap.to(this.material.uniforms.uAlpha, {
+            duration,
+            value: alpha,
+            ease: 'sine.in'
+        })
+
+        gsap.to(this.points.scale, {
+            duration,
+            x: scale.x,
+            y: scale.y,
+            z: scale.z,
+            ease: 'sine.in'
+        })
     }
 }

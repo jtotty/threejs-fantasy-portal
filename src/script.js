@@ -12,6 +12,7 @@ import { gsap } from 'gsap'
 import LoadingScreen from './modules/loadingScreen.js'
 import Particles from './modules/particles.js'
 import DiceRoll from './modules/diceRoll.js'
+import DiceNumber from './modules/diceNumber.js'
 
 // FPS Counter
 import Stats from 'stats.js'
@@ -54,13 +55,13 @@ loadingScreen.init()
 // Axis Helper
 if (!process.env.PRODUCTION) {
     const axesHelper = new THREE.AxesHelper(5)
-    scene.add(axesHelper)
+    // scene.add(axesHelper)
 }
 
 /**
  * Loaders
  */
- const loadingManager = new THREE.LoadingManager(
+const loadingManager = new THREE.LoadingManager(
     // Loaded
     () => {
         onLoaded()
@@ -70,7 +71,7 @@ if (!process.env.PRODUCTION) {
             particles.init()
         })
     }
- )
+)
 
 /**
  * Textures
@@ -108,8 +109,15 @@ const lampLightMaterial = new THREE.MeshBasicMaterial({ color: 0xffffb8 })
 // d20 material
 const d20Material = new THREE.MeshBasicMaterial({ map: d20Texture })
 
+debugObject.distance = 1.4
 debugObject.portalColorStart = '#a3c5e1'
 debugObject.portalColorEnd = '#ffffff'
+
+gui
+    .add(debugObject, 'distance').min(-1).max(10).step(0.1)
+    .onChange(() => {
+        portalLightMaterial.uniforms.uDistance.value = debugObject.distance
+    })
 
 gui
     .addColor(debugObject, 'portalColorStart')
@@ -127,6 +135,8 @@ gui
 const portalLightMaterial = new THREE.ShaderMaterial({
     uniforms: {
         uTime: { value: 0 },
+        uAlpha: { value: 1 },
+        uDistance: { value : 1.4 },
         uColorStart: { value: new THREE.Color(debugObject.portalColorStart) },
         uColorEnd: { value: new THREE.Color(debugObject.portalColorEnd) }
     },
@@ -137,6 +147,11 @@ const portalLightMaterial = new THREE.ShaderMaterial({
 /**
  * Main scene
  */
+let mainModel
+let mainModelOriginalPosition = {}
+let lampAOriginalPosition = {}
+let lampBOriginalPosition = {}
+let portalOriginalPosition = {}
 gltfLoader.load(
     'portal.glb',
     gltf => {
@@ -145,13 +160,20 @@ gltfLoader.load(
         const lampLightBMesh = gltf.scene.children.find(child => child.name === 'lampLightB')
         const portalLightMesh = gltf.scene.children.find(child => child.name === 'portalLight')
 
+        mainModelOriginalPosition = { ...bakedMesh.position }
+        lampAOriginalPosition = { ...lampLightAMesh.position }
+        lampBOriginalPosition = { ...lampLightBMesh.position }
+        portalOriginalPosition = { ...portalLightMesh.position }
 
         bakedMesh.material = bakedMaterial
         lampLightAMesh.material = lampLightMaterial
         lampLightBMesh.material = lampLightMaterial
         portalLightMesh.material = portalLightMaterial
 
-        scene.add(gltf.scene)
+        bakedMesh.frustumCulled = false
+
+        mainModel = gltf.scene
+        scene.add(mainModel)
     }
 )
 
@@ -159,18 +181,20 @@ gltfLoader.load(
  * d20 Dice
  */
 let d20Model
+let diceRoll
 gltfLoader.load(
     'd20.glb',
     gltf => {
-        const d20Mesh = gltf.scene.children.find(child => child.name === 'd20')
-        d20Mesh.scale.set(0.06, 0.06, 0.06)
-        d20Mesh.position.set(0, 2.05, - 1.8)
-        d20Mesh.material = d20Material
-        d20Model = d20Mesh
+        d20Model = gltf.scene.children.find(child => child.name === 'd20')
+        d20Model.scale.set(0.06, 0.06, 0.06)
+        d20Model.position.set(0, 2.1, - 1.8)
+        d20Model.material = d20Material
         scene.add(d20Model)
+
+        // Dice roll button
+        diceRoll = new DiceRoll(d20Model)
     }
 )
-
 
 /**
  * Particles
@@ -191,6 +215,168 @@ gui.addColor(particles.props, 'outsideColor').onFinishChange(value => {
 })
 
 /**
+ * Fonts
+ */
+let diceText = ''
+let diceNumber
+const fontLoader = new THREE.FontLoader()
+fontLoader.load(
+    '/fonts/Fredoka_One_Regular.json',
+    font => {
+        diceNumber = new DiceNumber(font, diceText, scene)
+        diceNumber.init()
+    }
+)
+
+/**
+ * Animate portal shader colours to allow number to appear in center
+ */
+const portalShrink = value => {
+    gsap.to(debugObject, {
+        duration: 2,
+        distance: -1,
+        ease: 'sine.in',
+        onUpdate: () => {
+            portalLightMaterial.uniforms.uDistance.value = debugObject.distance
+        },
+        onComplete: () => {
+            diceNumber.updateNumber(value)
+            
+            gsap.to(debugObject, {
+                duration: 1,
+                distance: 1.5,
+                ease: 'sine.in',
+                onUpdate: () => {
+                    portalLightMaterial.uniforms.uDistance.value = debugObject.distance
+                },
+                onComplete: () => {
+                    diceRoll.animating = false
+                }
+            })
+        }
+    })
+}
+
+
+/**
+ * Make the scene vanish
+ */
+const dissapearScene = () => {
+    mainModel.children.forEach(child => {
+        gsap.to(child.scale, {
+            duration: 1,
+            x: 0,
+            y: 0,
+            z: 0,
+            ease: 'sine.in'
+        })
+
+        gsap.to(child.position, {
+            duration: 1,
+            x: 0,
+            y: 0,
+            z: 0,
+            ease: 'sine.in'
+        })
+    })
+
+    gsap.to(portalLightMaterial.uniforms.uAlpha, {
+        duration: 1,
+        value: 0,
+        ease: 'sine.in'
+    })
+
+    gsap.to(debugObject, {
+        duration: 1,
+        clearColor: '#000000', 
+        ease: 'sine.in',
+        onUpdate() {
+            renderer.setClearColor(debugObject.clearColor)
+        },
+        onComplete() {
+            gui.updateDisplay()
+        }
+    })
+
+    particles.fade(1, 0, { x: 0, y: 0, z: 0 })
+}
+
+/**
+ * Make the scene reappaear
+ */
+const appearScene = () => {
+    mainModel.children.forEach(child => {
+        gsap.to(child.scale, {
+            duration: 1,
+            x: 1,
+            y: 1,
+            z: 1,
+            ease: 'sine.in'
+        })
+
+        if (child.name === 'lampLightA') {
+            gsap.to(child.position, {
+                duration: 1,
+                x: lampAOriginalPosition.x,
+                y: lampAOriginalPosition.y,
+                z: lampAOriginalPosition.z,
+                ease: 'sine.in'
+            })
+        }
+
+        if (child.name === 'lampLightB') {
+            gsap.to(child.position, {
+                duration: 1,
+                x: lampBOriginalPosition.x,
+                y: lampBOriginalPosition.y,
+                z: lampBOriginalPosition.z,
+                ease: 'sine.in'
+            })
+        }
+
+        if (child.name === 'portalLight') {
+            gsap.to(child.position, {
+                duration: 1,
+                x: portalOriginalPosition.x,
+                y: portalOriginalPosition.y,
+                z: portalOriginalPosition.z,
+                ease: 'sine.in'
+            })
+        }
+
+        if (child.name === 'baked') {
+            gsap.to(child.position, {
+                duration: 1,
+                x: mainModelOriginalPosition.x,
+                y: mainModelOriginalPosition.y,
+                z: mainModelOriginalPosition.z,
+                ease: 'sine.in'
+            })
+        }
+    })
+
+    gsap.to(portalLightMaterial.uniforms.uAlpha, {
+        duration: 1,
+        value: 1,
+        ease: 'sine.in'
+    })
+
+    gsap.to(debugObject, {
+        duration: 1,
+        clearColor: '#353543', 
+        ease: 'sine.in',
+        onUpdate() {
+            renderer.setClearColor(debugObject.clearColor)
+        },
+        onComplete() {
+            gui.updateDisplay()
+        }
+    })
+
+    particles.fade(1, 1, { x: 1, y: 1, z: 1 })
+}
+
+/**
  * Sizes
  */
 const sizes = {
@@ -198,6 +384,7 @@ const sizes = {
     height: window.innerHeight
 }
 
+let nat1 = false
 const onLoaded = () => {
     window.addEventListener('resize', () => {
         // Update sizes
@@ -217,21 +404,26 @@ const onLoaded = () => {
         gui.updateDisplay()
     })
 
-    // Dice roll button
     const button = document.querySelector('.btn')
-    const diceRoll = new DiceRoll(d20Model)
-
     button.classList.add('show')
+
     button.addEventListener('click', () => {
         if (!diceRoll.animating) {
-            diceRoll.roll()
-            gui.updateDisplay()
+            diceRoll.roll().then(value => {
+                portalShrink(value)
+
+                // if (value === 1 && !nat1) {
+                //     dissapearScene()
+                //     nat1 = true
+                // }
+
+                // if (value !== 1 && nat1) {
+                //     appearScene()
+                //     nat1 = false
+                // }
+            })
         }
     })
-
-    gui.add(d20Model.rotation, 'x').min(-6.28319).max(6.28319).step(0.001)
-    gui.add(d20Model.rotation, 'y').min(-6.28319).max(6.28319).step(0.001)
-    gui.add(d20Model.rotation, 'z').min(-6.28319).max(6.28319).step(0.001)
 }
 
 /**
@@ -273,15 +465,23 @@ gui
 const clock = new THREE.Clock()
 
 const tick = () => {
-    const elapsedTime = clock.getElapsedTime()
+    // Call tick again on the next frame
+    window.requestAnimationFrame(tick)
+
+    const delta = clock.getElapsedTime()
 
     stats.begin()
 
     // Update fireflies
-    particles.animate(elapsedTime)
+    particles.animate(delta)
 
     // Update portal
-    portalLightMaterial.uniforms.uTime.value = elapsedTime
+    portalLightMaterial.uniforms.uTime.value = delta
+
+    // Float Dice
+    if (d20Model != null) {
+        d20Model.position.y += Math.sin(delta * 2) * 0.0005
+    }
 
     // Update controls
     controls.update()
@@ -291,8 +491,6 @@ const tick = () => {
 
     stats.end()
 
-    // Call tick again on the next frame
-    window.requestAnimationFrame(tick)
 }
 
 tick()
