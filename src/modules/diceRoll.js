@@ -59,9 +59,11 @@ export default class DiceRoll {
                     this.animating = true
                 },
                 onComplete: () => {
-                    resolve(value)
+                    // resolve(value)
                 }
             })
+
+            resolve(value)
         })
     }
 }

@@ -233,7 +233,7 @@ fontLoader.load(
  */
 const portalShrink = value => {
     gsap.to(debugObject, {
-        duration: 1,
+        duration: 2,
         distance: -1,
         ease: 'sine.in',
         onUpdate: () => {
@@ -412,16 +412,16 @@ const onLoaded = () => {
             diceRoll.roll().then(value => {
                 portalShrink(value)
 
-                if (value === 1 && !nat1) {
-                    dissapearScene()
-                    nat1 = true
-                }
+                // if (value === 1 && !nat1) {
+                //     dissapearScene()
+                //     nat1 = true
+                // }
 
-                if (value !== 1 && nat1) {
-                    appearScene()
-                    nat1 = false
-                }
-            })   
+                // if (value !== 1 && nat1) {
+                //     appearScene()
+                //     nat1 = false
+                // }
+            })
         }
     })
 }
