@@ -148,10 +148,6 @@ const portalLightMaterial = new THREE.ShaderMaterial({
  * Main scene
  */
 let mainModel
-let mainModelOriginalPosition = {}
-let lampAOriginalPosition = {}
-let lampBOriginalPosition = {}
-let portalOriginalPosition = {}
 gltfLoader.load(
     'portal.glb',
     gltf => {
@@ -160,17 +156,10 @@ gltfLoader.load(
         const lampLightBMesh = gltf.scene.children.find(child => child.name === 'lampLightB')
         const portalLightMesh = gltf.scene.children.find(child => child.name === 'portalLight')
 
-        mainModelOriginalPosition = { ...bakedMesh.position }
-        lampAOriginalPosition = { ...lampLightAMesh.position }
-        lampBOriginalPosition = { ...lampLightBMesh.position }
-        portalOriginalPosition = { ...portalLightMesh.position }
-
         bakedMesh.material = bakedMaterial
         lampLightAMesh.material = lampLightMaterial
         lampLightBMesh.material = lampLightMaterial
         portalLightMesh.material = portalLightMaterial
-
-        bakedMesh.frustumCulled = false
 
         mainModel = gltf.scene
         scene.add(mainModel)
@@ -233,7 +222,7 @@ fontLoader.load(
  */
 const portalShrink = value => {
     gsap.to(debugObject, {
-        duration: 2,
+        duration: 1,
         distance: -1,
         ease: 'sine.in',
         onUpdate: () => {
@@ -257,123 +246,68 @@ const portalShrink = value => {
     })
 }
 
+let nat20Gsap = null
+const nat20 = () => {
+    const rainbow = {
+        'red': '#fc6f6f',
+        'orange': '#fca96f',
+        'yellow': '#e6db5f',
+        'green': '#95e65d',
+        'purple': '#8d5de6',
+        'violet': '#cd5de6',
+        'blue': '#a3c5e1'
+    }
 
-/**
- * Make the scene vanish
- */
-const dissapearScene = () => {
-    mainModel.children.forEach(child => {
-        gsap.to(child.scale, {
-            duration: 1,
-            x: 0,
-            y: 0,
-            z: 0,
-            ease: 'sine.in'
+    const portalKeyframes = []
+    for (const key of Object.keys(rainbow)) {
+        portalKeyframes.push({
+            duration: 0.618,
+            portalColorStart: rainbow[key]
         })
+    }
 
-        gsap.to(child.position, {
-            duration: 1,
-            x: 0,
-            y: 0,
-            z: 0,
-            ease: 'sine.in'
-        })
-    })
-
-    gsap.to(portalLightMaterial.uniforms.uAlpha, {
-        duration: 1,
-        value: 0,
-        ease: 'sine.in'
-    })
-
-    gsap.to(debugObject, {
-        duration: 1,
-        clearColor: '#000000', 
-        ease: 'sine.in',
-        onUpdate() {
-            renderer.setClearColor(debugObject.clearColor)
+    nat20Gsap = gsap.to(debugObject, {
+        keyframes: portalKeyframes,
+        delay: 1,
+        repeat: -1,
+        ease: 'sine.inOut',
+        onUpdate: () => {
+            portalLightMaterial.uniforms.uColorStart.value.set(debugObject.portalColorStart)
         },
-        onComplete() {
-            gui.updateDisplay()
+    })
+
+    gsap.to(particles.props, {
+        duration: 3,
+        frequency: 100,
+        delay: 1,
+        ease: 'sine.inOut',
+        onUpdate: () => {
+            particles.updateUniform('uFrequency', particles.props.frequency)
         }
     })
-
-    particles.fade(1, 0, { x: 0, y: 0, z: 0 })
 }
 
-/**
- * Make the scene reappaear
- */
-const appearScene = () => {
-    mainModel.children.forEach(child => {
-        gsap.to(child.scale, {
-            duration: 1,
-            x: 1,
-            y: 1,
-            z: 1,
-            ease: 'sine.in'
-        })
-
-        if (child.name === 'lampLightA') {
-            gsap.to(child.position, {
-                duration: 1,
-                x: lampAOriginalPosition.x,
-                y: lampAOriginalPosition.y,
-                z: lampAOriginalPosition.z,
-                ease: 'sine.in'
-            })
-        }
-
-        if (child.name === 'lampLightB') {
-            gsap.to(child.position, {
-                duration: 1,
-                x: lampBOriginalPosition.x,
-                y: lampBOriginalPosition.y,
-                z: lampBOriginalPosition.z,
-                ease: 'sine.in'
-            })
-        }
-
-        if (child.name === 'portalLight') {
-            gsap.to(child.position, {
-                duration: 1,
-                x: portalOriginalPosition.x,
-                y: portalOriginalPosition.y,
-                z: portalOriginalPosition.z,
-                ease: 'sine.in'
-            })
-        }
-
-        if (child.name === 'baked') {
-            gsap.to(child.position, {
-                duration: 1,
-                x: mainModelOriginalPosition.x,
-                y: mainModelOriginalPosition.y,
-                z: mainModelOriginalPosition.z,
-                ease: 'sine.in'
-            })
-        }
-    })
-
-    gsap.to(portalLightMaterial.uniforms.uAlpha, {
-        duration: 1,
-        value: 1,
-        ease: 'sine.in'
-    })
+const setPortalColor = (color, value) => {
+    if (nat20Gsap != null) nat20Gsap.kill()    
 
     gsap.to(debugObject, {
-        duration: 1,
-        clearColor: '#353543', 
-        ease: 'sine.in',
-        onUpdate() {
-            renderer.setClearColor(debugObject.clearColor)
+        portalColorStart: color,
+        delay: 1,
+        ease: 'sine.inOut',
+        onUpdate: () => {
+            portalLightMaterial.uniforms.uColorStart.value.set(debugObject.portalColorStart)
         },
-        onComplete() {
-            gui.updateDisplay()
-        }
     })
 
-    particles.fade(1, 1, { x: 1, y: 1, z: 1 })
+    gsap.to(particles.props, {
+        duration: 1,
+        frequency: value / 2,
+        delay: 1,
+        ease: 'sine.inOut',
+        onUpdate: () => {
+            particles.updateUniform('uFrequency', particles.props.frequency)
+        }
+    })
 }
 
 /**
@@ -384,7 +318,6 @@ const sizes = {
     height: window.innerHeight
 }
 
-let nat1 = false
 const onLoaded = () => {
     window.addEventListener('resize', () => {
         // Update sizes
@@ -412,15 +345,19 @@ const onLoaded = () => {
             diceRoll.roll().then(value => {
                 portalShrink(value)
 
-                // if (value === 1 && !nat1) {
-                //     dissapearScene()
-                //     nat1 = true
-                // }
+                switch (value) {
+                    case 1:
+                        setPortalColor('#616161', value)
+                        break
 
-                // if (value !== 1 && nat1) {
-                //     appearScene()
-                //     nat1 = false
-                // }
+                    case 20:
+                        nat20()
+                        break
+
+                    default:
+                        setPortalColor('#a3c5e1', value)
+                        break
+                }
             })
         }
     })

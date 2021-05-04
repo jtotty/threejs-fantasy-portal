@@ -57,9 +57,6 @@ export default class DiceRoll {
                 ease: 'sine.inOut',
                 onStart: () => {
                     this.animating = true
-                },
-                onComplete: () => {
-                    // resolve(value)
                 }
             })
 

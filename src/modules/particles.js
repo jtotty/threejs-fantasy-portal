@@ -14,7 +14,8 @@ export default class Particles {
             count: 5000,
             size: Math.floor(70 * (window.innerHeight / 1440)),
             insideColor: '#ffffff',
-            outsideColor: '#0f3dac'
+            outsideColor: '#0f3dac',
+            frequency: 2
         }
 
         this.points = null
@@ -24,7 +25,8 @@ export default class Particles {
                 uTime: { value: 0 },
                 uAlpha: { value: 1 },
                 uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) },
-                uSize: { value: this.props.size }
+                uSize: { value: this.props.size },
+                uFrequency: { value: this.props.frequency }
             },
             vertexColors: true,
             vertexShader: particleVertexShader,
@@ -68,7 +70,6 @@ export default class Particles {
         this.geometry.setAttribute('color', new THREE.BufferAttribute(colorsArray, 3))
 
         this.points = new THREE.Points(this.geometry, this.material)
-        this.points.frustumCulled = false
         this.points.name = 'points'
 
         this._scene.add(this.points)
@@ -120,6 +121,13 @@ export default class Particles {
         this.material.uniforms.uPixelRatio.value = Math.min(window.devicePixelRatio, 2)
         this.material.uniforms.uSize.value = Math.floor(70 * (window.innerHeight / 1440))
         this.props.size = this.material.uniforms.uSize.value
+    }
+
+    /**
+     * Update the material uniform values.
+     */
+    updateUniform(key, value) {
+        this.material.uniforms[key].value = value
     }
 
     /**
