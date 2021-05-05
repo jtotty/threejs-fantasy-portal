@@ -55,7 +55,7 @@ loadingScreen.init()
 // Axis Helper
 if (!process.env.PRODUCTION) {
     const axesHelper = new THREE.AxesHelper(5)
-    // scene.add(axesHelper)
+    scene.add(axesHelper)
 }
 
 /**
@@ -107,7 +107,7 @@ const bakedMaterial = new THREE.MeshBasicMaterial({ map: bakedTexture })
 const lampLightMaterial = new THREE.MeshBasicMaterial({ color: 0xffffb8 })
 
 // d20 material
-const d20Material = new THREE.MeshBasicMaterial({ map: d20Texture })
+const d20Material = new THREE.MeshToonMaterial({ map: d20Texture })
 
 debugObject.distance = 1.4
 debugObject.portalColorStart = '#a3c5e1'
@@ -157,6 +157,7 @@ gltfLoader.load(
         const portalLightMesh = gltf.scene.children.find(child => child.name === 'portalLight')
 
         bakedMesh.material = bakedMaterial
+        bakedMesh.castShadow = true
         lampLightAMesh.material = lampLightMaterial
         lampLightBMesh.material = lampLightMaterial
         portalLightMesh.material = portalLightMaterial
@@ -178,7 +179,40 @@ gltfLoader.load(
         d20Model.scale.set(0.06, 0.06, 0.06)
         d20Model.position.set(0, 2.1, - 1.8)
         d20Model.material = d20Material
+        d20Model.receiveShadow = true
+        d20Model.castShadow = true
         scene.add(d20Model)
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4)
+        scene.add(ambientLight)
+
+        const spotLight = new THREE.SpotLight(0xffffff, 50, 2, Math.PI * 0.1, 0.25, 4.7)
+        spotLight.position.set(0, 1, - 1.7)
+        spotLight.castShadow = true;
+        spotLight.target = d20Model
+
+        spotLight.shadow.radius = 10
+
+        spotLight.shadow.mapSize.width = 1024
+        spotLight.shadow.mapSize.height = 1024
+
+        spotLight.shadow.camera.near = 0.1
+        spotLight.shadow.camera.far = 1.5
+        spotLight.shadow.camera.fov = 30
+
+        scene.add(spotLight)
+        scene.add(spotLight.target)
+
+        if (!process.env.PRODUCTION) {
+            const spotLightHelper = new THREE.SpotLightHelper(spotLight)
+            scene.add(spotLightHelper)
+            window.requestAnimationFrame(() => {
+                spotLightHelper.update()
+            })
+            
+            const directionalLightCameraHelper = new THREE.CameraHelper(spotLight.shadow.camera)
+            scene.add(directionalLightCameraHelper)
+        }
 
         // Dice roll button
         diceRoll = new DiceRoll(d20Model)
@@ -387,6 +421,8 @@ const renderer = new THREE.WebGLRenderer({
 renderer.outputEncoding = THREE.sRGBEncoding
 renderer.setSize(sizes.width, sizes.height)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+renderer.shadowMap.enabled = true
+// renderer.shadowMap.type = THREE.PCFSoftShadowMap
 
 debugObject.clearColor = '#353543'
 renderer.setClearColor(debugObject.clearColor)
