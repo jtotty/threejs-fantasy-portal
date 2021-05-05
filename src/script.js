@@ -159,6 +159,7 @@ gltfLoader.load(
 
         bakedMesh.material = bakedMaterial
         bakedMesh.castShadow = true
+
         lampLightAMesh.material = lampLightMaterial
         lampLightBMesh.material = lampLightMaterial
         portalLightMesh.material = portalLightMaterial
