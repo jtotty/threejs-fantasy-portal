@@ -1,6 +1,7 @@
 uniform float uTime;
 uniform float uPixelRatio;
 uniform float uSize;
+uniform float uFrequency;
 
 attribute float aScale;
 
@@ -13,11 +14,11 @@ void main() {
     modelPosition.z -= tan(uTime + modelPosition.x) * 0.05;
 
     if (modelPosition.z < - 1.8 || modelPosition.z > 2.0) {
-        modelPosition.z = 10.0;
+        modelPosition.z = - 10.0;
     }
 
     float attractToCenter = log(modelPosition.z + 3.0);
-    float yWave = sin(modelPosition.z * 2.0) * aScale * 0.3;
+    float yWave = sin(modelPosition.z * uFrequency) * aScale * 0.3;
     
     if (modelPosition.x > 0.0) {
         modelPosition.x = attractToCenter;
