@@ -13,6 +13,7 @@ import LoadingScreen from './modules/loadingScreen.js'
 import Particles from './modules/particles.js'
 import DiceRoll from './modules/diceRoll.js'
 import DiceNumber from './modules/diceNumber.js'
+import SpotLight from './modules/spotLight.js'
 
 // FPS Counter
 import Stats from 'stats.js'
@@ -186,32 +187,12 @@ gltfLoader.load(
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.4)
         scene.add(ambientLight)
 
-        const spotLight = new THREE.SpotLight(0xffffff, 50, 2, Math.PI * 0.1, 0.25, 4.7)
-        spotLight.position.set(0, 1, - 1.7)
-        spotLight.castShadow = true;
-        spotLight.target = d20Model
-
-        spotLight.shadow.radius = 10
-
-        spotLight.shadow.mapSize.width = 1024
-        spotLight.shadow.mapSize.height = 1024
-
-        spotLight.shadow.camera.near = 0.1
-        spotLight.shadow.camera.far = 1.5
-        spotLight.shadow.camera.fov = 30
-
-        scene.add(spotLight)
-        scene.add(spotLight.target)
+        const spotLight = new SpotLight(scene, d20Model)
+        spotLight.init()
 
         if (!process.env.PRODUCTION) {
-            const spotLightHelper = new THREE.SpotLightHelper(spotLight)
-            scene.add(spotLightHelper)
-            window.requestAnimationFrame(() => {
-                spotLightHelper.update()
-            })
-            
-            const directionalLightCameraHelper = new THREE.CameraHelper(spotLight.shadow.camera)
-            scene.add(directionalLightCameraHelper)
+            spotLight.helper()
+            spotLight.directionalLightCameraHelper()
         }
 
         // Dice roll button
@@ -422,7 +403,6 @@ renderer.outputEncoding = THREE.sRGBEncoding
 renderer.setSize(sizes.width, sizes.height)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 renderer.shadowMap.enabled = true
-// renderer.shadowMap.type = THREE.PCFSoftShadowMap
 
 debugObject.clearColor = '#353543'
 renderer.setClearColor(debugObject.clearColor)
