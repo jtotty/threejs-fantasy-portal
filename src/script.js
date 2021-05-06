@@ -152,7 +152,6 @@ let mainModel
 gltfLoader.load(
     'portal.glb',
     gltf => {
-        console.log(gltf.scene.children)
         const bakedMesh = gltf.scene.children.find(child => child.name === 'baked')
         const lampLightAMesh = gltf.scene.children.find(child => child.name === 'lampLightA')
         const lampLightBMesh = gltf.scene.children.find(child => child.name === 'lampLightB')
