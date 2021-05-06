@@ -152,10 +152,12 @@ let mainModel
 gltfLoader.load(
     'portal.glb',
     gltf => {
+        console.log(gltf.scene.children)
         const bakedMesh = gltf.scene.children.find(child => child.name === 'baked')
         const lampLightAMesh = gltf.scene.children.find(child => child.name === 'lampLightA')
         const lampLightBMesh = gltf.scene.children.find(child => child.name === 'lampLightB')
         const portalLightMesh = gltf.scene.children.find(child => child.name === 'portalLight')
+        const staffOrbMesh = gltf.scene.children.find(child => child.name === 'staffOrb')
 
         bakedMesh.material = bakedMaterial
         bakedMesh.castShadow = true
@@ -163,6 +165,7 @@ gltfLoader.load(
         lampLightAMesh.material = lampLightMaterial
         lampLightBMesh.material = lampLightMaterial
         portalLightMesh.material = portalLightMaterial
+        staffOrbMesh.material = lampLightMaterial
 
         mainModel = gltf.scene
         scene.add(mainModel)
